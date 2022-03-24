@@ -44,24 +44,23 @@
         }
 
         #playerEndpoint {
-            height: 25px;
-            width: 210px;
+            height: 45px;
+            width: 290px;
             border: none;
             background-color: black;
             color: yellow;
             padding: 5px;
-            border-top-left-radius: 15px;
-            border-bottom-left-radius: 15px;
+            resize: none;
+            font-size: 12px;
         }
 
         #addPlayerBtn {
             height: 34px;
+            width: 300px;
             border: none;
             background-color: darkblue;
             color: white;
             padding: 5px;
-            border-top-right-radius: 15px;
-            border-bottom-right-radius: 15px;
         }
 
         #assignTaskBtn {
@@ -112,8 +111,8 @@
             <td id="tdCenter">
                 <table>
                     <tr>
-                        <td><input type="text" placeholder="player endpoint" id="playerEndpoint"><input type="button"
-                                value="Add Player" onclick="addPlayer()" id="addPlayerBtn"></td>
+                        <td><textarea placeholder="player endpoint(s)" id="playerEndpoint"></textarea><br><input type="button"
+                                value="Add Player(s)" onclick="addPlayer()" id="addPlayerBtn"></td>
                     </tr>
                     <tr>
                         <td>
@@ -154,6 +153,13 @@
                 alert("Player endpoint is required..");
                 return;
             }
+            var endpoints = String(playerEndpoint.value).split("\n");
+            for(var j=0;j<endpoints.length;j++) {
+                var endpoint = endpoints[j];
+                addPlayerInner(endpoint);
+            }
+        }
+        function addPlayerInner(endpoint) {
             var td = document.querySelector("#td" + players.length);
             if (td == undefined) {
                 incrementRowBy1(players.length, players.length + 1);
@@ -163,21 +169,21 @@
                     return;
                 }
             }
-            td.setAttribute("url", playerEndpoint.value);
-            var disp = String(playerEndpoint.value).split("/");
+            td.setAttribute("url", endpoint);
+            var disp = endpoint.split("/");
             if (disp[disp.length - 1] != "") {
                 disp = disp[disp.length - 1];
             } else if (disp.length > 1) {
                 disp = disp[disp.length - 2];
             } else {
-                disp = playerEndpoint.value;
+                disp = endpoint;
             }
             var nameP = document.querySelector("#nameP" + players.length);
             var statusP = document.querySelector("#statusP" + players.length);
             attachClickHandler(td, statusP);
             setStatus(td, statusP, WAIT);
             nameP.innerText = disp;
-            players.push(playerEndpoint.value);
+            players.push(endpoint);
         }
         function attachClickHandler(td, statusP) {
             var appurl = td.getAttribute("url");
