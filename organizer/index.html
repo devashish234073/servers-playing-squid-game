@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Servers playing squid game</title>
+    <style>
+        table {
+            margin-left: auto;
+            margin-right: auto;
+            border-collapse: collapse;
+        }
+
+        table td {
+            padding: 15px;
+            border-radius: 50px;
+        }
+
+        .active {
+            color: white;
+            background-color: green;
+        }
+
+        .eliminated {
+            color: white;
+            background-image: url("eliminated.png");
+        }
+
+        .namesP {
+            font-size: 12px;
+            height: 15px;
+        }
+
+        .statusP {
+            font-size: 10px;
+            height: 24px;
+        }
+
+        #addPlayerBtn:active {
+            color: green;
+            background-color: orange;
+        }
+
+        #playerEndpoint {
+            height: 25px;
+            width: 210px;
+            border: none;
+            background-color: black;
+            color: yellow;
+            padding: 5px;
+            border-top-left-radius: 15px;
+            border-bottom-left-radius: 15px;
+        }
+
+        #addPlayerBtn {
+            height: 34px;
+            border: none;
+            background-color: darkblue;
+            color: white;
+            padding: 5px;
+            border-top-right-radius: 15px;
+            border-bottom-right-radius: 15px;
+        }
+
+        #assignTaskBtn {
+            height: 34px;
+            margin-left: auto;
+            margin-right: auto;
+            width: 300px;
+            border: none;
+            background-color: darkblue;
+            color: white;
+            padding: 5px;
+        }
+
+        input[type='number'] {
+            width: 50px;
+            height: 25px;
+            border: none;
+            background-color: rgb(181, 228, 181);
+            color: blue;
+            outline: none;
+        }
+
+        .smallFont {
+            font-size: 11px;
+            height:30px;
+            background-color: rgb(169, 233, 169);
+            color: blue;
+            padding:5px;
+        }
+    </style>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"
+        integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+</head>
+
+<body>
+    <table id="tableMain">
+        <tr>
+            <td>
+                <table id="evenTable">
+                    <tr>
+                        <td id="td0" class="active">
+                            <p id="nameP0" class="namesP"></p>
+                            <p id="statusP0" class="statusP"></p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+            <td id="tdCenter">
+                <table>
+                    <tr>
+                        <td><input type="text" placeholder="player endpoint" id="playerEndpoint"><input type="button"
+                                value="Add Player" onclick="addPlayer()" id="addPlayerBtn"></td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <p class="smallFont">Assign task to each server:</p>
+                            <p class="smallFont">Find <input type="number" id="nth" value="9000">th prime number in
+                                <input type="number" id="ms" value="3000">
+                                milliseconds</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="button" value="Start Game" id="assignTaskBtn" onclick="clickAll()"></td>
+                    </tr>
+                </table>
+            </td>
+            <td>
+                <table id="oddTable">
+                    <tr>
+                        <td id="td1" class="active">
+                            <p id="nameP1" class="namesP"></p>
+                            <p id="statusP1" class="statusP"></p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+    <script>
+        var playerEndpoint = document.querySelector("#playerEndpoint");
+        var evenTable = document.querySelector("#evenTable");
+        var oddTable = document.querySelector("#oddTable");
+        var tableMain = document.querySelector("#tableMain");
+        var nth = document.querySelector("#nth");
+        var ms = document.querySelector("#ms");
+        var players = [];
+        var tableRowCount = 1;
+        function addPlayer() {
+            if (String(playerEndpoint.value) == "") {
+                alert("Player endpoint is required..");
+                return;
+            }
+            var td = document.querySelector("#td" + players.length);
+            if (td == undefined) {
+                incrementRowBy1(players.length, players.length + 1);
+                td = document.querySelector("#td" + players.length);
+                if (td == undefined) {
+                    alert("Illegal table state, please refresh the page and try again..");
+                    return;
+                }
+            }
+            td.setAttribute("url", playerEndpoint.value);
+            var disp = String(playerEndpoint.value).split("/");
+            if (disp[disp.length - 1] != "") {
+                disp = disp[disp.length - 1];
+            } else if (disp.length > 1) {
+                disp = disp[disp.length - 2];
+            } else {
+                disp = playerEndpoint.value;
+            }
+            var nameP = document.querySelector("#nameP" + players.length);
+            var statusP = document.querySelector("#statusP" + players.length);
+            attachClickHandler(td, statusP);
+            setStatus(td, statusP, WAIT);
+            nameP.innerText = disp;
+            players.push(playerEndpoint.value);
+        }
+        function attachClickHandler(td, statusP) {
+            var appurl = td.getAttribute("url");
+            td.addEventListener("click", function () {
+                sendRequest(appurl, td, statusP);
+            });
+        }
+        function sendRequest(appurl, td, statusP) {
+            if (nth.value == "") {
+                alert("nth value is required..");
+                return;
+            } else if (ms.value == "") {
+                alert("ms value is required..");
+                return;
+            }
+            var toSend = JSON.stringify({ "nth": parseInt(nth.value) });
+            console.log("toSend: " + toSend + " to " + appurl);
+            setStatus(td, statusP, SENT);
+            $.post(appurl,
+                toSend,
+                function (response) {
+                    console.log(response);
+                    setStatus(td, statusP, SUCCESS + response);
+                }
+            );
+        }
+        function incrementRowBy1(indx1, indx2) {
+            var tr1 = document.createElement("tr");
+            var tr2 = document.createElement("tr");
+            evenTable.appendChild(tr1);
+            oddTable.appendChild(tr2);
+            var td1 = document.createElement("td");
+            var td2 = document.createElement("td");
+            td1.setAttribute("id", "td" + indx1);
+            createPUnderTd(td1, indx1);
+            td2.setAttribute("id", "td" + indx2);
+            createPUnderTd(td2, indx2);
+            td1.setAttribute("class", "active");
+            td2.setAttribute("class", "active");
+            tr1.appendChild(td1);
+            tr2.appendChild(td2);
+        }
+        function createPUnderTd(td, indx) {
+            var p1 = document.createElement("p");
+            p1.setAttribute("id", "nameP" + indx);
+            var p2 = document.createElement("p");
+            p2.setAttribute("id", "statusP" + indx);
+            p1.setAttribute("class", "nameP");
+            p2.setAttribute("class", "statusP");
+            td.appendChild(p1);
+            td.appendChild(p2);
+        }
+        var WAIT = "waiting....";
+        var SENT = "message sent....";
+        var SUCCESS = "success:";
+        var dateData = {};
+        function getDelay(p) {
+            var id = p.getAttribute("id");
+            var d1 = dateData[id]["d1"];
+            var d2 = dateData[id]["d2"];
+            if (d1 != undefined && d2 != undefined) {
+                p.setAttribute("title", (d2 - d1) + " ms");
+                return d2 - d1;
+            } else {
+                return -1;
+            }
+        }
+        function setStatus(td, p, status) {
+            p.innerText = status;
+            var id = p.getAttribute("id");
+            if (status == WAIT) {
+                p.style.backgroundColor = "gray";
+                p.style.color = "yellow";
+            } else if (status == SENT) {
+                p.style.backgroundColor = "orange";
+                p.style.color = "black";
+                dateData[id] = { "d1": new Date() };
+            } else if (status.indexOf(SUCCESS) == 0) {
+                p.style.backgroundColor = "lightgreen";
+                p.style.color = "black";
+                dateData[id]["d2"] = new Date();
+                var delay = getDelay(p);
+                p.innerText = status.replace(SUCCESS, "") + "\r\n" + "in " + delay + " ms";
+                if (delay > parseInt(ms.value)) {
+                    td.setAttribute("class", "eliminated");
+                }
+            }
+        }
+        function clickAll() {
+            if (nth.value == "") {
+                alert("nth value is required..");
+                return;
+            } else if (ms.value == "") {
+                alert("ms value is required..");
+                return;
+            }
+            var actives = document.querySelectorAll(".active");
+            for (var i = 0; i < actives.length; i++) {
+                var td = actives[i];
+                var cn = td.childNodes;
+                var statusP = undefined;
+                for (var j = 0; j < cn.length; j++) {
+                    try {
+                        if (cn[j].getAttribute("class") == "statusP") {
+                            statusP = cn[j];
+                        }
+                    } catch (e) {
+
+                    }
+                }
+                if (statusP != undefined) {
+                    clickAsynchronously(td.getAttribute("url"), td, statusP);
+                } else {
+                    alert("illegal DOM structure..");
+                }
+            }
+            function clickAsynchronously(appurl, td, statusP) {
+                setTimeout(function () {
+                    sendRequest(appurl, td, statusP);
+                }, 1000);
+            }
+        }
+    </script>
+</body>
+
+</html>
